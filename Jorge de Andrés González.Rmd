@@ -1,0 +1,64 @@
+---
+title: "Jorge de Andrés González"
+author: "Jorge de Andrés"
+date: "1/6/2020"
+output: 
+  rmdformats::readthedown:
+    toc: 5
+    toc_float: True
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Ejercicio 1
+
+## Enunciado
+
+Considere la base de datos “ehd” incluída en la librería “psy”.
+
+Busque en la documentación la información asociada a cada una de las variables y realice un resumen sumario de la misma.
+
+Se considera evaluar la varianza común de los datos utilizando el método de máxima verosimilitud. Si los datos son adecuados, determine el número ideal de factores a obtener, realice el análisis e interprete los factores finalmente obtenidos.
+
+
+
+
+
+# Ejercicio 2
+
+## Enunciado
+
+El fichero “socioecconomica.xlsx” contiene información sobre la evolución del paro en la provincia de Cantabria desde el año 2005 hasta el primer trimestre de 2020.
+
+Seleccione las tasas de paro y evalúe la similitud en la evolución de las series a través de un escalamiento multidimensional no métrico.
+
+Una vez reducida la dimensionalidad, realice un cluster agrupando las series que presenten comportamientos similares y establezca las conclusiones oportunas.
+
+
+
+
+# Ejercicio 3
+
+## Enunciado
+
+El archivo “coffe.sav” contiene datos relativos a las imágen percibida de seis marcas de café helado. Para cada uno de los 23 atributos de imagen de café helado, los encuestados seleccionaron todas las marcas que quedaban descritas por el atributo. Las seis marcas se denotan AA, BB, CC, DD, EE y FF para mantener la confidencialidad.
+
+Analice la percepción asociada a las diferentes marcas.
+
+
+
+# Ejercicio 4
+
+## Enunciado
+
+La base de datos Cars93 incluida en la librería “MASS” contiene una selección aleatoria de 93 modelos de automóviles de pasajeros de 1993 que se enumeraron tanto en la edición de Consumer Reports como en la Guía de compras de PACE. Las camionetas y los vehículos deportivos / utilitarios fueron eliminados debido a la información incompleta en la fuente de Consumer Reports. Los modelos duplicados (por ejemplo, Dodge Shadow y Plymouth Sundance) se enumeraron como máximo una vez.
+
+Plantee un análisis de correlación canónica entre las variables asociadas a las características físicas de los vehículos (tamaño de motor, caballos de fuerza, longitud, distancia entre ejes, anchura, asiento trasero y peso) y las relativas al precio y el funcionamiento (precio medio, consumo en ciudad, consumo en carretera y espacio de giro en U).
+
+
+
+
+
+
