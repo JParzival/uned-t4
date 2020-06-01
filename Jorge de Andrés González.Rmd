@@ -9,7 +9,9 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
 # Ejercicio 1
@@ -23,6 +25,136 @@ Busque en la documentación la información asociada a cada una de las variables
 Se considera evaluar la varianza común de los datos utilizando el método de máxima verosimilitud. Si los datos son adecuados, determine el número ideal de factores a obtener, realice el análisis e interprete los factores finalmente obtenidos.
 
 
+## Importación de datos
+
+```{r}
+
+library(psy)
+data(ehd)
+str(ehd)
+
+```
+
+## Realización de resumen sumario
+
+```{r}
+
+summary(ehd)
+
+```
+
+Se puede observar como todas las variables son categóricas entre 0 y 4. Como no están en string, no hace falta transformarlas a número.
+
+```{r}
+for (x in colnames(ehd)) 
+{
+  tmp <- ehd[[x]]
+  hist(tmp, main=x) 
+}
+
+```
+
+## Realización AF
+
+### Comprobación Datos
+
+```{r}
+
+table(is.na(ehd))
+
+```
+
+No existen datos nulos, y todos los datos están entre 0 y 4, por lo que parece ser que los datos son adecuados.
+
+### Creación modelo AF
+
+Creamos un modelo de Análisis Factorial puesto que se desea un análisis de la varianza común.
+
+```{r}
+
+library(corrplot)
+
+correl <- cor(ehd, method="spearman")
+correl
+
+```
+```{r}
+
+corrplot(correl, type="upper")
+
+```
+
+Como podemos observar en la matriz de correlaciones, y como es de esperar, la diagonal (la variable consigo misma) tiene una correlación de 1.
+Muchas variables no tienen correlación entre sí, aunque existen algunas que sí la poseen.
+
+```{r}
+
+library(psych)
+cortest.bartlett(ehd)
+
+```
+
+Tras la prueba de esfericidad de Bartlett, podemos obtener que existen correlaciones significativas entre las variables, y por lo tanto el modelo factorial tiene sentido en este caso.
+
+```{r}
+
+det(correl)
+
+```
+
+El determinante de la matriz de correlación dice que por debajo de 0.3 existe una baja colinealidad. Por lo tanto, podemos ver que la colinealidad es prácticamente inexistente.
+
+
+```{r}
+
+pc.1 <- princomp(ehd, cor=TRUE)
+summary(pc.1, loadings=TRUE)
+
+```
+```{r}
+
+plot(pc.1, main="Principal components")
+
+```
+
+El análisis nos indica que con 7 componentes nos será suficiente.
+
+```{r}
+
+pc.1.ps <- fa(correl, n.obs = length(ehd), fm = "ml", nfactors = 7, rotate ="varimax")
+print(pc.1.ps)
+
+```
+
+Usamos la librería Factanal a continuación, para tener otra manera de calcular con máxima verosimilitud:
+
+```{r}
+
+fact.1 <- factanal(ehd, factors=7, rotation="varimax", scores = "Bartlett")
+fact.1
+
+```
+
+El factanal me dice que con 7 factores es suficiente.
+Las uniquenesses parecen muy pequeñas, lo que nos indica que estamos en general explicando bastante bien todas las variables.
+
+
+Cargas rotadas:
+
+```{r}
+
+sedim.1 <- varimax(fact.1$loadings)
+sedim.1
+
+```
+
+Finalmente, obtenemos el gráfico de sedimentación con las cargas ya rotadas
+
+```{r}
+
+barplot(sort(colSums(loadings(sedim.1) ^ 2), decreasing=TRUE))
+
+```
 
 
 
@@ -31,9 +163,7 @@ Se considera evaluar la varianza común de los datos utilizando el método de m�
 ## Enunciado
 
 El fichero “socioecconomica.xlsx” contiene información sobre la evolución del paro en la provincia de Cantabria desde el año 2005 hasta el primer trimestre de 2020.
-
 Seleccione las tasas de paro y evalúe la similitud en la evolución de las series a través de un escalamiento multidimensional no métrico.
-
 Una vez reducida la dimensionalidad, realice un cluster agrupando las series que presenten comportamientos similares y establezca las conclusiones oportunas.
 
 
@@ -44,7 +174,6 @@ Una vez reducida la dimensionalidad, realice un cluster agrupando las series que
 ## Enunciado
 
 El archivo “coffe.sav” contiene datos relativos a las imágen percibida de seis marcas de café helado. Para cada uno de los 23 atributos de imagen de café helado, los encuestados seleccionaron todas las marcas que quedaban descritas por el atributo. Las seis marcas se denotan AA, BB, CC, DD, EE y FF para mantener la confidencialidad.
-
 Analice la percepción asociada a las diferentes marcas.
 
 
@@ -54,8 +183,26 @@ Analice la percepción asociada a las diferentes marcas.
 ## Enunciado
 
 La base de datos Cars93 incluida en la librería “MASS” contiene una selección aleatoria de 93 modelos de automóviles de pasajeros de 1993 que se enumeraron tanto en la edición de Consumer Reports como en la Guía de compras de PACE. Las camionetas y los vehículos deportivos / utilitarios fueron eliminados debido a la información incompleta en la fuente de Consumer Reports. Los modelos duplicados (por ejemplo, Dodge Shadow y Plymouth Sundance) se enumeraron como máximo una vez.
-
 Plantee un análisis de correlación canónica entre las variables asociadas a las características físicas de los vehículos (tamaño de motor, caballos de fuerza, longitud, distancia entre ejes, anchura, asiento trasero y peso) y las relativas al precio y el funcionamiento (precio medio, consumo en ciudad, consumo en carretera y espacio de giro en U).
+
+
+## Importación de datos
+
+```{r}
+
+library(MASS)
+str(Cars93)
+
+```
+
+## Limpieza de datos
+
+```{r}
+
+
+
+```
+
 
 
 
