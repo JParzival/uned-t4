@@ -117,6 +117,7 @@ plot(pc.1, main="Principal components")
 
 ```
 
+
 El análisis nos indica que con 7 componentes nos será suficiente.
 
 ```{r}
@@ -158,6 +159,12 @@ barplot(sort(colSums(loadings(sedim.1) ^ 2), decreasing=TRUE))
 
 
 
+
+
+
+
+
+
 # Ejercicio 2
 
 ## Enunciado
@@ -178,6 +185,22 @@ Analice la percepción asociada a las diferentes marcas.
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Ejercicio 4
 
 ## Enunciado
@@ -195,13 +218,72 @@ str(Cars93)
 
 ```
 
-## Limpieza de datos
+## Análisis de datos
 
 ```{r}
 
-
+library(funModeling)
+df_status(Cars93)
 
 ```
+
+```{r}
+
+print(as.data.frame(Cars93))
+
+```
+
+## Correlación Canónica
+
+```{r}
+
+library(CCA)
+library(tidyverse)
+
+matrizX <- Cars93 %>% dplyr::select(EngineSize, Horsepower, 
+                                    Length, Wheelbase, 
+                                    Width, Rear.seat.room, 
+                                    Weight) %>% as.matrix()
+
+matrizY <- Cars93 %>% dplyr::select(Price, MPG.city,
+                                    MPG.highway, Turn.circle) %>% as.matrix()
+
+
+correl.2 <- matcor(matrizX, matrizY)
+correl.2
+
+img.matcor(correl.2, type = 2)
+
+```
+
+Como se puede observar en la matriz X, existe una fortísima correlación entre casi todas las variables.
+En la matriz y, también existen muy fuertes correlaciones, tanto lineales como inversas.
+
+En la Cross-Correlation, interesa que no existan valores cercanos al cero. A excepción de la penúltima columna (0.3 y -0.3 aproximadamente), en el resto de celdas se ve que que los valores son muy distintos a cero.
+
+```{r}
+
+cc.2 <- cc(matrizX, matrizY)
+barplot(cc.2$cor, xlab = "Dimensión", 
+                  ylab = "Value CC", 
+                  ylim = c(0,1))
+
+```
+
+```{r}
+
+plt.cc(cc.2, var.label = TRUE)
+
+```
+
+Como se puede observar, para la dimensión 1 los Miles Per Gallon son totalmente inversos a las variables usadas.
+
+En cambio, para la dimensión 2, se observa que casi todas las variables están juntas excepto horsepower.En esta dimensión tiene sentido que a mayor anchura y distnacia entre ejes mayor curva tenga que hacer en U, y a mayor precio que tenga un mayor motor en caballos. Además, en esta dimensión el consumo aumenta con el aumento de caballos, lo cual también tiene sentido.
+
+
+
+
+
 
 
 
