@@ -157,13 +157,7 @@ barplot(sort(colSums(loadings(sedim.1) ^ 2), decreasing=TRUE))
 
 ```
 
-
-
-
-
-
-
-
+*** 
 
 # Ejercicio 2
 
@@ -173,8 +167,132 @@ El fichero “socioecconomica.xlsx” contiene información sobre la evolución 
 Seleccione las tasas de paro y evalúe la similitud en la evolución de las series a través de un escalamiento multidimensional no métrico.
 Una vez reducida la dimensionalidad, realice un cluster agrupando las series que presenten comportamientos similares y establezca las conclusiones oportunas.
 
+## Importación de datos
+
+```{r}
+
+socioeconomica <- openxlsx::read.xlsx('./datos/Socioeconomica.xlsx')
+str(socioeconomica)
+
+```
+
+## Escalamiento multidimensional no métrico
+
+En esta alternativa no es necesario que los datos sean normales, por lo que no se harán tests previos.
+
+```{r}
+
+library(magrittr)
+socioeconomica <- socioeconomica %>% dplyr::select(-'Ano', -'Trimestre', -'Total.16-24', -'Total.25-54',-'Total.55-64',-'Total.Total', -'Total.Jovenes', -'Total.No.cualificadas', -'Parados.Larga.Duracion.16-67', -'Parados.Larga.Duracion.Jovenes', -'Hombres.Total', -'Mujeres.Total')
+str(socioeconomica)
+
+```
 
 
+```{r}
+
+library(vegan)
+
+mds.analysis <- metaMDS(socioeconomica, k=3, trymax = 1000, distance = "gower")
+stressplot(mds.analysis)
+
+```
+
+En esta gráfica anterior se ve el "Diagrama de Shepard", donde se observan las distancias de la ordenación y las disimilaridades originales. Esto significa que cuanto más cerca estén los puntos a la línea roja, mejor será el modelo MDS. Como podemos ver, se obtiene un R cuadrado no métrico de 0.989, lo que significa que se ajusta muy bien.
+
+```{r}
+
+mds.analysis
+
+```
+
+De estos datos podemos obtener que se usa la raíz cuadrada de la distancia de Wisconsin, también conocida como distancia de Bray-Curtis. El stress es de 0.104, lo cual dice que la representación es suficientemente adecuada para continuar (menor de 0.1 es lo óptimo, y mayor de 0.3 aproximadamente es muy malo).
+
+
+```{r}
+
+print(mds.analysis)
+plot(mds.analysis, type='t')
+
+```
+
+Si lo hacemos de tal manera que las variables estén agrupadas...
+
+```{r}
+
+library(plotly)
+
+set.seed(97)
+sil_width <- c()
+samples <- 10
+for(i in 2:5) #Hasta 5 clusters
+{ 
+      clara_fit <- cluster::clara(mds.analysis$species, 
+                                  k = i, 
+                                  metric = "manhattan", 
+                                  pamLike = T, 
+                                  samples = samples)
+      
+      sil_width[i] <- clara_fit$silinfo$avg.width
+      print(i)
+}
+sil_width[1]<-0 # Con un cluster no hay distancia, o la hay infinita, según como se quiera ver
+resultadosM <- data.frame(k = 1:i, sil_width)
+
+plotly::ggplotly(ggplot(data = resultadosM, aes(x = k, sil_width)) + geom_line() + geom_point() + labs(title = "Separación de los clusters", subtitle = "Anchura de la 'Silueta'"))
+
+```
+
+Como se puede observar, 2 y 3 son las mejores configuraciones ya que ofrecen una mayor separación de los clusters.
+
+```{r}
+
+clara_fit <- cluster::clara(mds.analysis$species, 
+                            k = 2, 
+                            metric = "manhattan", 
+                            pamLike = T,
+                            samples = samples)
+plot(clara_fit, main = "Clustering con Clara")
+clara_fit
+factoextra::fviz_cluster(list (data = mds.analysis$species, cluster = clara_fit$clustering), ggtheme = theme_minimal(), main = "Clara")
+
+```
+
+Aquí se pueden ver grupos en común. Destaca el grupo rojo, donde se incluyen todos los hombres, y destaca por el comportamiento totalmente distinto de las mujeres de 55-64 respecto al resto de segmentos de mujeres, que forman el otro cluster.
+
+```{r}
+
+modelo <- kmeans (mds.analysis$species, 2)
+modelo
+
+factoextra::fviz_cluster(list (data = mds.analysis$species, cluster = modelo$cluster), ggtheme = theme_minimal(), main="KMeans")
+
+```
+
+Por KMeans, se obtienen exactamente los mismos clusters que por Clara.
+
+
+```{r}
+
+km.res <- kmeans(socioeconomica, 2, nstart = 5000)
+factoextra::fviz_cluster(km.res, data = socioeconomica, frame.type = "convex")
+
+```
+
+Aquí tenemos los clusters por personas bajo las dos dimensiones principales. Como podemos observar, los clusters están bastante bien definidos.
+
+```{r}
+
+dist.2 <- vegdist(mds.analysis$species, method = "gower")
+hclust.2 <- hclust(dist.2, method="ward.D2", members = NULL)
+plot(hclust.2, main = "Dendrograma", cex=0.7, hang=0.8)
+
+```
+
+Otro tipo de clusterización se hace mediante dendrograma, podemos ver bien los dos clusters que comentaba anteriormente. También se puede observar este comportamiento extraño de las mujeres de 55-64, que aunque están encuadradas con los hombres, tienen un comportamiento significativamente distinto.
+También es interesante ver como dentro de mujeres, y dentro de hombres, son muy similares los comportamientos entre los grupos de 16-24 y de 25-54.
+
+*** 
 
 # Ejercicio 3
 
@@ -183,23 +301,168 @@ Una vez reducida la dimensionalidad, realice un cluster agrupando las series que
 El archivo “coffe.sav” contiene datos relativos a las imágen percibida de seis marcas de café helado. Para cada uno de los 23 atributos de imagen de café helado, los encuestados seleccionaron todas las marcas que quedaban descritas por el atributo. Las seis marcas se denotan AA, BB, CC, DD, EE y FF para mantener la confidencialidad.
 Analice la percepción asociada a las diferentes marcas.
 
+## Importación de datos
+
+```{r}
+
+library(foreign)
+coffee <- read.spss('datos/Coffee.sav', to.data.frame = T)
+str(coffee)
+print(coffee)
+
+```
+
+```{r}
+
+library("FactoMineR")
+library("factoextra")
+
+summary(coffee)
+
+```
+
+## Creación del modelo
+
+```{r}
+
+coffee <- reshape2::dcast(coffee, imagen ~ marca)
+coffee
+
+```
+
+```{r}
+
+library(gplots)
+filas <- as.character(coffee$imagen)
+df3 <- as.table(as.matrix(coffee [,-1]))
+rownames(df3) <- filas
+balloonplot(t(df3), 
+            main = "Imágenes vs Marcas", 
+            xlab ="", 
+            ylab ="", 
+            label = F, 
+            show.margins = F)
+
+```
+
+Aunque en pequeño, podemos observar las frecuencias de las palabras clave por marca de café en el balloonplot.
+Podemos ver que, por ejemplo, en la CC destacan "sano", "bajo en grasa" y "mujeres", aunque esta última en menor medida.
 
 
+```{r}
+
+modelo.3 <- CA (df3, graph = F)
+modelo.3
+
+```
+
+```{r}
+
+vexp.3 <- get_eigenvalue(modelo.3)
+fviz_screeplot(modelo.3, addlabels = TRUE, ylim = c(0, 100))
+
+```
+
+Como se puede ver en el gráfico, el hecho de operar ya con dos dimensiones sería suficiente, puesto que ya estaríamos obteniendo más del 80% de la variabilidad y es fácilmente representable. Si siguiéramos la regla del codo, tendríamos que coger 3 dimensiones.
+
+### Por filas
+
+```{r}
+
+row <- get_ca_row(modelo.3)
+row
+
+```
+
+```{r}
+
+fviz_ca_row(modelo.3, col.row="steelblue", shape.row = 15, repel = TRUE)
+
+```
+
+Si nos centramos en las filas, podemos ver dónde se encuentra cada característica respecto a las dos componentes principales. De esta manera, dos características que se consideren similares aparecerán juntas, mientras que dos elementos alejados serán muy diferentes.
+
+```{r}
+
+fviz_ca_row(modelo.3, col.row = "cos2",
+gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+repel = TRUE)
+
+```
+
+En el gráfico anterior observamos lo mismo pero con el coseno cuadrado, gracias a un degradado de colores. Cuanto mayor sea el valor, mejor representación tiene.
 
 
+```{r}
+
+library("corrplot")
+corrplot(row$cos2, is.corr=FALSE)
+
+```
+
+Aquí vemos la correlación, segmentada por dimensión, basándonos en el cos2.
+
+```{r}
+
+fviz_cos2(modelo.3, choice = "row", axes = 1:2)
+
+```
+
+Podemos ver las calidades de la representación (cos2) vistas de manera analítica en un gráfico de barras. Como se puede observar, las mejor representadas son "hombres", "sano" y "mujeres", mientras que "feo" es la peor representada. Esto es para las dimensiones 1 y 2.
 
 
+```{r}
+
+fviz_contrib(modelo.3, choice = "row", axes = 1, top = 10)
+fviz_contrib(modelo.3, choice = "row", axes = 2, top = 10)
+
+```
+
+Respecto a la contribución a las dimensiones, a la dimensión 1 destacan "bajo en grasa" y "sano", mientras que a la dimensión 2 destacan las contribuciones que hacen "duro" y "hombres".
 
 
+### Por columnas 
 
+```{r}
 
+col <- get_ca_col(modelo.3)
+col
 
+```
 
+Nos basamos ahora en columas
 
+```{r}
 
+fviz_ca_col(modelo.3)
 
+```
 
+Podemos ver, para las dos componentes principales, dónde se encuentran las marcas de café.
 
+```{r}
+
+fviz_cos2(modelo.3, choice = "col", axes = 1:2)
+
+```
+
+Ahora, podemos ver para éstas marcas de café lo bien representadas que están a través de cos2, siendo "CC", "DD" y "EE" las mejor representadas.
+
+### Biplot
+
+```{r}
+
+fviz_ca_biplot(modelo.3, map ="rowprincipal", arrow = c(TRUE, TRUE), repel = TRUE)
+
+```
+
+En el anterior biplot, podemos observar las contribuciones de las variables a las marcas de café. Es importante tener en cuenta en este análisis que cuanto más cerca esté una flecha a un eje, estará aportando una mayor contribución. Es importante ver que aquí destacan tanto el módulo de la flecha (longitud) como su ángulo (a dónde apunta).
+
+Es evidente que CC y Sano están muy relacionados, así como con DD. Esto también tiene sentido que esté relacionado con otras variables como "nutritivo" o "bajo en grasa".
+En cambio, el café EE es más para "hombres" ya que es "duro", y es bastante contrario a "feo" y "yupis".
+También, un café "dulce", para "niños" o "tradicional" se corresponde más a los BB y FF.
+
+*** 
 
 # Ejercicio 4
 
